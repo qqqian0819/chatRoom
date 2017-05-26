@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>ifram完成客服</title>
+</head>
+<style>
+	#messZone{
+		width:500px;
+		height: 300px;
+		border:1px solid #999;
+		overflow: scroll;
+	}
+</style>
+<body>
+	<h1>comet反向ajax技术--ifram+长连接--在线客服admin系统</h1>
+	<div id="messZone"></div>
+	<p>回复:</p>
+	<div id="rec"></div>
+	<textarea name="" cols="40" rows="10"></textarea><br>
+	<input type="button" value="回复" onclick='reply()'>
+	<iframe src="./http/02-17/03.php" frameborder="0" width="0" height="0"></iframe>
+
+	
+</body>
+<script>
+
+	// var xhr=new XMLHttpRequest();
+	
+	// 浏览器兼容性创建xhr对象
+	function createXHR() {
+		var xhr=null;
+		if(window.XMLHttpRequest){
+			xhr=new XMLHttpRequest;
+		}else if(window.ActiveXObject('Microsoft.XMLHTTP')){
+			xhr=new ActiveXObject('Microsoft.XMLHTTP');
+		}
+		return xhr;
+	}
+	var xhr=createXHR();
+
+	function comet(msg){
+		//在php中数据库中取出的数组数据被转化为了json格式
+		// console.log(msg);
+		var cont='';
+		cont+='<span onclick=rec("'+msg.pos+'")>'+msg.pos+'</span>对<span onclick=rec("'+msg.receiver+'")>'+msg.receiver+'</span>说<br />'+msg.content+'<hr>';
+		document.getElementById('messZone').innerHTML+=cont;
+	}
+
+	function rec(per){
+		// console.log(per);
+		document.getElementById('rec').innerHTML=per;
+	}
+	function reply(){
+		// 发送对象
+		var rec=document.getElementById('rec').innerHTML;
+		// 发送内容
+		var cont=document.getElementsByTagName('textarea')[0].value;
+		if(rec==""||cont==" "){
+			alert('回复人和回复内容均不能为空');
+			return;
+		}
+		// 异步
+		xhr.open('POST','./http/02-17/04.php',true);
+		xhr.setRequestHeader('content-type','application/x-www-form-urlencoded');
+		xhr.onreadystatechange=function(){
+			if(this.readyState==4){
+				if(this.responseText=='ok'){
+					// 回复的内容
+					var conts='';
+					var conts='你对<span onclick=rec("'+rec+'")>'+rec+'</span>说<br />'+cont+'<hr>';
+					document.getElementById('messZone').innerHTML+=conts;
+					
+					
+				}
+			}
+		}
+		xhr.send('receiver='+rec+'&content='+cont);
+		// 置空输入框
+		document.getElementsByTagName('textarea')[0].value='';
+	}
+</script>
+</html>
