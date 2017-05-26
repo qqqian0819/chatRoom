@@ -2,31 +2,69 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>ifram完成客服</title>
+	<title>长连接</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="shortcut icon" href="/blog/public/favicon.png">
+	<link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <style>
 	#messZone{
-		width:500px;
+		width: 100%;
 		height: 300px;
 		border:1px solid #999;
 		overflow: scroll;
 	}
 </style>
-<body>
-	<h1>comet反向ajax技术--ifram+长连接--在线客服admin系统</h1>
+<body class="container-fluid">
 	<div id="messZone"></div>
 	<p>回复:</p>
 	<div id="rec"></div>
-	<textarea name="" cols="40" rows="10"></textarea><br>
-	<input type="button" value="回复" onclick='reply()'>
-	<iframe src="./http/02-17/03.php" frameborder="0" width="0" height="0"></iframe>
+	<textarea name="" rows="5" class="form-control"></textarea><br>
+	<button class="btn btn-default btn-lg btn-block">回复</button>
+	<iframe src="flush.php" frameborder="0" width="0" height="0"></iframe>
 
 	
 </body>
+<footer style="height:100px">
+	<p class="text-center">copyright qqqian 2017</p>
+	<p class="text-center">comet反向ajax技术--ifram+长连接--在线客服admin系统</p>
+</footer>
+<script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <script>
 
-	// var xhr=new XMLHttpRequest();
-	
+	// 获取用户
+	var uname = prompt('请输入用户名', 'user' + uuid(8, 16));
+	/**
+	 * 生成默认用户值：全局唯一ID;
+	 * @date   2017-05-27T00:24:40+0800
+	 * @return {string}
+	 */
+	function uuid(len, radix) {
+        var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
+        var uuid = [], i;
+        radix = radix || chars.length;
+
+        if (len) {
+            for (i = 0; i < len; i++) uuid[i] = chars[0 | Math.random() * radix];
+        } else {
+            var r;
+
+            uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
+            uuid[14] = '4';
+
+            for (i = 0; i < 36; i++) {
+                if (!uuid[i]) {
+                    r = 0 | Math.random() * 16;
+                    uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
+                }
+            }
+        }
+
+        return uuid.join('');
+    }
+	// console.log(uname);
+
 	// 浏览器兼容性创建xhr对象
 	function createXHR() {
 		var xhr=null;
@@ -37,47 +75,57 @@
 		}
 		return xhr;
 	}
-	var xhr=createXHR();
+	
 
 	function comet(msg){
 		//在php中数据库中取出的数组数据被转化为了json格式
 		// console.log(msg);
-		var cont='';
-		cont+='<span onclick=rec("'+msg.pos+'")>'+msg.pos+'</span>对<span onclick=rec("'+msg.receiver+'")>'+msg.receiver+'</span>说<br />'+msg.content+'<hr>';
-		document.getElementById('messZone').innerHTML+=cont;
+		if(msg.pos==uname){
+			return;
+		}else if(msg.receiver==uname){
+			var cont='';
+			cont+='<span onclick=rec("'+msg.pos+'") style="color:#f00">'+msg.pos+'</span>对<span onclick=rec("'+msg.receiver+'") style="color:#f00">'+msg.receiver+'(我)</span>说<br />'+msg.content+'<hr>';
+		}else{
+			var cont='';
+			cont+='<span onclick=rec("'+msg.pos+'") style="color:#f00">'+msg.pos+'</span>对<span onclick=rec("'+msg.receiver+'") style="color:#f00">'+msg.receiver+'</span>说<br />'+msg.content+'<hr>';
+		}
+		
+		$('#messZone').append(cont);
+		$('#messZone').scrollTop = $('#messZone').scrollHeight;
 	}
 
 	function rec(per){
-		// console.log(per);
-		document.getElementById('rec').innerHTML=per;
+		$('#rec').text(per);
 	}
-	function reply(){
+	$('button').on('click',function(){
 		// 发送对象
-		var rec=document.getElementById('rec').innerHTML;
+		var rec=$('#rec').text();
 		// 发送内容
-		var cont=document.getElementsByTagName('textarea')[0].value;
-		if(rec==""||cont==" "){
-			alert('回复人和回复内容均不能为空');
-			return;
+		var cont=$('textarea').val();
+
+		if(rec==''){
+			rec='所有人';
 		}
 		// 异步
-		xhr.open('POST','./http/02-17/04.php',true);
+		var xhr=createXHR();
+		xhr.open('POST','connect.php',true);
 		xhr.setRequestHeader('content-type','application/x-www-form-urlencoded');
 		xhr.onreadystatechange=function(){
 			if(this.readyState==4){
 				if(this.responseText=='ok'){
 					// 回复的内容
 					var conts='';
-					var conts='你对<span onclick=rec("'+rec+'")>'+rec+'</span>说<br />'+cont+'<hr>';
-					document.getElementById('messZone').innerHTML+=conts;
+					conts+='<span style="color:#f00">'+uname+'(我)</span>对<span onclick=rec("'+rec+'") style="color:#f00">'+rec+'</span>说<br />'+cont+'<hr>';
+					$('#messZone').append(conts);
+					$('#messZone').scrollTop = $('#messZone').scrollHeight;// 移动滚动条到当前位置
 					
 					
 				}
 			}
 		}
-		xhr.send('receiver='+rec+'&content='+cont);
+		xhr.send('receiver='+rec+'&content='+cont+'&username='+uname);
 		// 置空输入框
-		document.getElementsByTagName('textarea')[0].value='';
-	}
+		$('textarea').val('');
+	})
 </script>
 </html>
