@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>webSocket</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="shortcut icon" href="../favicon.png">
+	<link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<style>
+	*{margin:0; padding:0;}
+    .well{
+        width: 80%;
+        height: 6em;
+        background-color: #eee;
+        margin:0 auto;
+        text-align: center;
+        font-weight: 400;
+        font-size: 1em;
+        padding-top: 0.8em;
+    }
+    .list{
+        height: 35em;
+        border:1px solid #999;
+        margin:0 auto;
+    }
+    #user{
+        float: left;
+        width: 20%;
+        height: 100%;
+        background: #eee;
+        overflow-y: scroll;
+    }
+    h3{text-align: center}
+    #user-list{
+        font-weight: 400;
+        margin-left: 1em;
+
+    }
+    #user-list span{
+    	cursor: pointer;
+    }
+    #user-num{color: #f00}
+
+	.content{
+		background-color: #fbfbfb;
+		text-indent: 2em;
+	}
+
+	#text-list{
+		height: 100%;
+		overflow-y: scroll;
+	}
+</style>
+</style>
+<body class="container-fluid">
+	<div class="list">
+		<div id="user">
+	        <h3>在线用户列表:<span id="user-num">0</span></h3>
+	        <div id="user-list">
+	        </div>
+	    </div>
+	    <div id="text-list">
+	        <h3>聊天记录列表</h3>	       
+	    </div>
+	</div>
+	<p>回复:<span id="rec" style="color:#f00">所有人</span></p>
+	<textarea name="" rows="5" class="form-control"></textarea><br>
+	<button class="btn btn-info btn-lg btn-block">发送</button>
+</body>
+<footer style="height:100px;text-align:center">
+	<p style="color:#AD5B5B">默认或者点击自己回复所有人</p>
+	<p >webSocket聊天室</p>
+	<p >copyright qqqian 2017</p>
+</footer>
+<script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+<script src="../uname.js"></script>
+<script>
+
+var ws=new WebSocket("ws://127.0.0.1:8080");
+
+ws.onopen=function(et){
+	console.log('连接成功')
+}
+ws.onmessage=function(et){
+	console.log(et.data);
+	// 将字符串转化为json
+	let data=JSON.parse(et.data);
+	listMess(data);
+}
+ws.onerror=function(){
+	let data='出错了请退出重新登录'
+	alert(data);
+}
+/**
+ * 聊天信息组装并清空输入框
+ * @date   2017-05-28
+ */
+function sendMess(){
+	let cont=$.trim($('textarea').val());
+	let receiver=$.trim($('#rec').text());
+	if(cont==''||receiver==''){
+		alert('不能为空');
+		return false;
+	}
+
+	let data={'content':cont,'type':'user','receiver':receiver}
+	send(data);
+	$('textarea').val('');
+}
+
+
+
+/**
+ * 向服务器端发送字符串信息
+ * @date   2017-05-28
+ * @param  {[object]} 需要发送的数据
+ */
+function send(data){
+	// 将json对象解析成字符串
+	let msg = JSON.stringify(data);
+	ws.send(msg);
+}
+
+
+/**
+ * 展示信息
+ * @date   2017-05-28
+ * @param  {[array]}   	type [数据]
+ * @param  {[type]}   	msg  [description]
+ */
+function listMess(data){
+
+	// switch case 时 data下数据无效？？？
+	if(data.type=='login'){
+		var html='<p><small><span style="color:#Af5B5B">'+data.content+'</span> 上线了 <span  style="color:#569FC8">'+data.stime+'</span></small></p>';
+		listUser(data.user_list);
+		
+	}else if(data.type=='logout'){
+		var html='<p><small><span style="color:#Af5B5B">'+data.content+'</span> 下线了 <span style="color:#569FC8">'+data.stime+'</span></small>';
+		listUser(data.user_list);
+	}else if(data.type=='user'){
+		var html='<span style="color:#Af5B5B">'+data.from+'</span> 对 <span  style="color:#Af5B5B">'+data.receiver+'</span>说 :<span style="color:#569FC8">'+data.stime+'</span><br><p class="content">'+data.content+'</p>'
+	}else if(data.type=='handshake'){
+		let data = {'type': 'login', 'content': uname,'stime':new Date().toLocaleString()};
+        send(data);
+        return;
+	}
+
+	// 添加内容到页面
+   	$("#text-list").append(html);
+   	// 滚动到当前位置
+    let scrollTop = $("#text-list")[0].scrollHeight;
+    $("#text-list").scrollTop(scrollTop);
+
+}
+
+
+/**
+ * 处理用户列表
+ * @date   2017-05-28
+ * @param  {[array]}   list [用户列表]
+ */
+function listUser(list){
+	var user=$('#user-list');
+	$('#user-num').text(list.length);
+	user.empty()// 清空用户列表
+	for(let index in list){
+		
+		if(list[index]==uname){
+			user.append($('<span style="color:#f00" onclick=rePlay("所有人")>'+list[index]+'(我)</span></br>'));
+		}else{
+			user.append($('<span  onclick=rePlay("'+list[index]+'") >'+list[index]+'</span></br>'));
+		}
+	}
+	let scrollTop = $("#user-list")[0].scrollHeight;
+    $("#user-list").scrollTop(scrollTop);
+
+}
+
+
+/**
+ * 回复某人
+ * @date   2017-05-28
+ * @param  {[string]}   user [用户名]
+ */
+function rePlay(user){
+	$('#rec').text(user);
+}
+
+// enter 键发送
+$(document).keypress(function(e) {
+	e = e || window.event;
+    if(e.keyCode == 13) {
+       sendMess();
+    }
+});
+// 点击按钮发送
+$('button').on('click',sendMess);
+
+</script>
+</html>
