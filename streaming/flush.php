@@ -1,12 +1,11 @@
 <?php
 
-// iframe完成在线客服
+// 长连接完成即时通信
 
-set_time_limit(0);//设置脚本最大执行时间 单位s
+set_time_limit(0);//单位s
 ob_start();
 
 $pad=str_repeat(' ', 8000);//8000个空白字符串
-// 同时使用 ob_flush() 和flush() 函数来刷新输出缓冲。
 
 ob_flush();//ob_flush — 冲刷出（送出）输出缓冲区中的内容
 flush();//把传送的内容 立即发送给浏览器而不要等脚本结束再一起发. 刷新PHP程序的缓冲,该函数将当前为止程序的所有输出发送到用户的浏览器。
@@ -23,12 +22,12 @@ while (true) {
 		$msg=json_encode($row);
 		echo "<script> parent.window.comet($msg) </script>";
 		$id=$row['id'];
-		ob_flush();
-		flush();//把传送的内容 立即发送给浏览器而不要等脚本结束再一起发		
+		ob_flush();// 冲刷之后缓冲区内容将被丢弃。
+		flush();// 把传送的内容 立即发送给浏览器而不要等脚本结束再一起发		
 		//设为已读状态
-		mysqli_query($link,"UPDATE tb_comet SET flag=1 WHERE id=$id");
-		
+		mysqli_query($link,"UPDATE tb_comet SET flag=1 WHERE id=$id");		
 	}
 	sleep(1);
 
 }
+

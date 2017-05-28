@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	<title>长连接</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="shortcut icon" href="/blog/public/favicon.png">
+	<link rel="shortcut icon" href="../favicon.png">
 	<link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <style>
@@ -16,53 +16,24 @@
 	}
 </style>
 <body class="container-fluid">
+	<h4 class="text-center">长连接</h4>
 	<div id="messZone"></div>
 	<p>回复:</p>
-	<div id="rec"></div>
+	<div id="rec" style="color:#f00"></div>
 	<textarea name="" rows="5" class="form-control"></textarea><br>
-	<button class="btn btn-default btn-lg btn-block">回复</button>
+	<button class="btn btn-info btn-lg btn-block">回复</button>
 	<iframe src="flush.php" frameborder="0" width="0" height="0"></iframe>
 
 	
 </body>
 <footer style="height:100px">
+	<p class="text-center" style="color:#AD5B5B">默认显示回复所有人,直接单击聊天框中某用户名即可显示回复某用户</p>
+	<p class="text-center">comet反向ajax技术--ifram+长连接--在线聊天室</p>
 	<p class="text-center">copyright qqqian 2017</p>
-	<p class="text-center">comet反向ajax技术--ifram+长连接--在线客服admin系统</p>
 </footer>
 <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
-<script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="../uname.js"></script>
 <script>
-
-	// 获取用户
-	var uname = prompt('请输入用户名', 'user' + uuid(8, 16));
-	/**
-	 * 生成默认用户值：全局唯一ID;
-	 * @date   2017-05-27T00:24:40+0800
-	 * @return {string}
-	 */
-	function uuid(len, radix) {
-        var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
-        var uuid = [], i;
-        radix = radix || chars.length;
-
-        if (len) {
-            for (i = 0; i < len; i++) uuid[i] = chars[0 | Math.random() * radix];
-        } else {
-            var r;
-
-            uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
-            uuid[14] = '4';
-
-            for (i = 0; i < 36; i++) {
-                if (!uuid[i]) {
-                    r = 0 | Math.random() * 16;
-                    uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
-                }
-            }
-        }
-
-        return uuid.join('');
-    }
 	// console.log(uname);
 
 	// 浏览器兼容性创建xhr对象
@@ -80,9 +51,7 @@
 	function comet(msg){
 		//在php中数据库中取出的数组数据被转化为了json格式
 		// console.log(msg);
-		if(msg.pos==uname){
-			return;
-		}else if(msg.receiver==uname){
+		if(msg.receiver==uname){
 			var cont='';
 			cont+='<span onclick=rec("'+msg.pos+'") style="color:#f00">'+msg.pos+'</span>对<span onclick=rec("'+msg.receiver+'") style="color:#f00">'+msg.receiver+'(我)</span>说<br />'+msg.content+'<hr>';
 		}else{
@@ -97,6 +66,7 @@
 	function rec(per){
 		$('#rec').text(per);
 	}
+
 	$('button').on('click',function(){
 		// 发送对象
 		var rec=$('#rec').text();
@@ -108,7 +78,7 @@
 		}
 		// 异步
 		var xhr=createXHR();
-		xhr.open('POST','connect.php',true);
+		xhr.open('POST','../connect.php',true);
 		xhr.setRequestHeader('content-type','application/x-www-form-urlencoded');
 		xhr.onreadystatechange=function(){
 			if(this.readyState==4){
