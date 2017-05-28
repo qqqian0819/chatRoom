@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>ajax长轮询</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="shortcut icon" href="../favicon.png">
+	<link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<style>
+	#messZone{
+		width: 100%;
+		height: 300px;
+		border:1px solid #999;
+		overflow: scroll;
+	}
+	#messZone span, #rec{color:#f00;}
+</style>
+<body class="container-fluid">	
+	<h3>原理:ajax+长连接+轮询 (长轮询) 获取实时内容并更新到父页面</h3>
+	<div id="messZone"></div>
+	<p>回复:</p>
+	<div id="rec" >所有人</div>
+	<textarea name="" rows="5" class="form-control"></textarea><br>
+	<button class="btn btn-info btn-lg btn-block">回复</button>
+	<footer style="height:100px;text-align:center">
+		<p style="color:#AD5B5B">默认显示回复所有人,直接单击聊天框中某用户名即可显示回复某用户</p>
+		<p>comet反向ajax技术---在线客服系统---之用户</p>
+		<p>copyright qqqian 2017</p>
+	</footer>
+</body>
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<script src="../uname.js"></script>
+<script>
+// 长轮询
+$(function(){
+	var setting={
+		url:'push.php',
+		dataType :'json', 
+		success:function(res){
+			// console.log(res);
+			addMess(res);
+			$.ajax(setting);//递归 轮
+		}
+	};
+
+	$.ajax(setting);
+
+})
+
+
+$('button').on('click',function(){
+
+	var cont=$('textarea').val();
+	var rec=$('#rec').text();
+
+	$.post('../connect.php',{receiver:rec,content:cont,username:uname},function(res){
+
+		if(res=='ok'){
+			$('<span>'+uname+'(我)</span>对<span>'+rec+'</span>说<br />'+cont+'<hr>').appendTo($('#messZone'));
+			$('textarea').val('');
+		}
+	});
+});
+
+function rec(per){
+	$('#rec').text(per);
+}
+
+function addMess(msg){
+	if(msg.pos==uname){
+		return;
+	}else if(msg.receiver==uname){
+		var cont='';
+		cont+='<span onclick=rec("'+msg.pos+'")>'+msg.pos+'</span>对<span onclick=rec("'+msg.receiver+'")>'+msg.receiver+'(我)</span>说<br />'+msg.content+'<hr>';
+	}else{
+		var cont='';
+		cont+='<span onclick=rec("'+msg.pos+'") >'+msg.pos+'</span>对<span onclick=rec("'+msg.receiver+'")>'+msg.receiver+'</span>说<br />'+msg.content+'<hr>';
+	}
+	
+	$('#messZone').append(cont);
+	$('#messZone').scrollTop = $('#messZone').scrollHeight;
+}
+</script>
+</html>
